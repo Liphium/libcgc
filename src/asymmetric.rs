@@ -79,29 +79,32 @@ pub struct AsymmetricKeyPair {
     pub secret_key: SecretKey,
 }
 
-// Create a new key pair (uses sodium and liboqs under the hood).
-pub fn new_keypair() -> AsymmetricKeyPair {
-    // Generate a new libsodium key pair
-    let mut sodium_pub = [0; sodoken::crypto_box::XSALSA_PUBLICKEYBYTES];
-    let mut sodium_priv = SizedLockedArray::new().unwrap();
-    crypto_box::xsalsa_keypair(&mut sodium_pub, &mut sodium_priv.lock())
-        .expect("Couldn't generate keypair (sodium)");
+impl AsymmetricKeyPair {
+    // Create a new key pair (uses sodium and liboqs under the hood).
+    pub fn new_keypair() -> AsymmetricKeyPair {
+        // Generate a new libsodium key pair
+        let mut sodium_pub = [0; sodoken::crypto_box::XSALSA_PUBLICKEYBYTES];
+        let mut sodium_priv = SizedLockedArray::new().unwrap();
+        crypto_box::xsalsa_keypair(&mut sodium_pub, &mut sodium_priv.lock())
+            .expect("Couldn't generate keypair (sodium)");
 
-    // Generate a new libcrux mlkem keypair
-    let mut os_rng = OsRng;
-    let mut rng = os_rng.unwrap_mut();
-    let (crux_priv, crux_pub) = libcrux_kem::key_gen(libcrux_kem::Algorithm::MlKem1024, &mut rng)
-        .expect("Couldn't generate key (libcrux)");
+        // Generate a new libcrux mlkem keypair
+        let mut os_rng = OsRng;
+        let mut rng = os_rng.unwrap_mut();
+        let (crux_priv, crux_pub) =
+            libcrux_kem::key_gen(libcrux_kem::Algorithm::MlKem1024, &mut rng)
+                .expect("Couldn't generate key (libcrux)");
 
-    // Return the key pair with the correct keys
-    AsymmetricKeyPair {
-        public_key: PublicKey {
-            sodium_key: sodium_pub,
-            crux_key: crux_pub,
-        },
-        secret_key: SecretKey {
-            sodium_key: sodium_priv,
-            crux_key: crux_priv,
-        },
+        // Return the key pair with the correct keys
+        AsymmetricKeyPair {
+            public_key: PublicKey {
+                sodium_key: sodium_pub,
+                crux_key: crux_pub,
+            },
+            secret_key: SecretKey {
+                sodium_key: sodium_priv,
+                crux_key: crux_priv,
+            },
+        }
     }
 }
