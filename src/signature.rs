@@ -1,0 +1,2 @@
+struct PublicKey {}
+struct SecretKey {}

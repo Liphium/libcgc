@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-libcrux = { version = "0.0.1", features = ["rand"] }
-libcrux-ml-kem = "0.0.2"
-rand = "0.9.1"
+ml-kem = "0.2.1"
+rand = "0.8.0"
 sodoken = "0.1.0"
+x-wing = "0.0.1-pre.1"
