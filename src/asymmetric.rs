@@ -51,8 +51,8 @@ pub struct AsymmetricKeyPair {
 
 impl AsymmetricKeyPair {
     // Create a new key pair (uses x_wing under the hood).
-    pub fn new_keypair() -> AsymmetricKeyPair {
-        let mut rng = &mut rand::rngs::OsRng;
+    pub fn generate() -> AsymmetricKeyPair {
+        let rng = &mut rand::rngs::OsRng;
         let (priv_key, pub_key) = x_wing::generate_key_pair(rng);
         AsymmetricKeyPair {
             public_key: PublicKey { key: pub_key },
@@ -76,4 +76,20 @@ pub fn encrypt(key: &PublicKey, message: Vec<u8>) -> Option<Vec<u8>> {
 }
 
 // Decrypt using your key pair.
-pub fn decrypt(pub_key: &PublicKey, priv_key )
+pub fn decrypt(priv_key: &SecretKey, ciphertext: Vec<u8>) -> Option<Vec<u8>> {
+    // Make sure the ciphertext has the proper length
+    if ciphertext.len() <= x_wing::CIPHERTEXT_SIZE {
+        return None;
+    }
+
+    // Extract the ciphertext and encrypted message
+    let (encrypted_msg, x_ss_enc) = ciphertext.split_at(ciphertext.len() - x_wing::CIPHERTEXT_SIZE);
+
+    // Get the shared secret (symmetric encryption key)
+    let x_ss_enc: [u8; x_wing::CIPHERTEXT_SIZE] = x_ss_enc.try_into().ok()?;
+    let x_ciph = x_wing::Ciphertext::from(&x_ss_enc);
+    let shared_secret = priv_key.key.decapsulate(&x_ciph).ok()?;
+
+    // Decrypt using symmetric
+    return Some(symmetric::decrypt(&shared_secret, encrypted_msg.to_vec())?);
+}
