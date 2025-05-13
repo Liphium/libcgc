@@ -6,9 +6,42 @@ pub struct PublicKey {
     pub sodium_key: [u8; sign::PUBLICKEYBYTES],
     pub ml_dsa_key: ml_dsa::VerifyingKey<MlDsa65>,
 }
+
 pub struct SecretKey {
     pub sodium_key: SizedLockedArray<{ sign::SECRETKEYBYTES }>,
     pub ml_dsa_key: ml_dsa::SigningKey<MlDsa65>,
+}
+
+impl SecretKey {
+    // Encode a secret key as a vector of bytes.
+    pub fn encode(&mut self) -> Vec<u8> {
+        let mut ml_secret_key = self.ml_dsa_key.encode().to_vec();
+        ml_secret_key.extend(self.sodium_key.lock().as_slice());
+        return ml_secret_key;
+    }
+
+    // Decode a secret key from a vector of bytes.
+    pub fn decode(encoded: Vec<u8>) -> Option<SecretKey> {
+        // Extract the two different keys
+        if encoded.len() <= sign::SECRETKEYBYTES {
+            return None;
+        }
+        let (enc_dsa_key, enc_sodium_key) = encoded.split_at(encoded.len() - sign::SECRETKEYBYTES);
+
+        // Parse the libsodium key
+        let enc_sodium_key: [u8; sign::SECRETKEYBYTES] = enc_sodium_key.try_into().ok()?;
+        let mut sodium_key = SizedLockedArray::new().ok()?;
+        sodium_key.lock().copy_from_slice(&enc_sodium_key);
+
+        // Parse the ml_dsa key
+        let enc_dsa_key: EncodedSigningKey<MlDsa65> = enc_dsa_key.try_into().ok()?;
+        let ml_key = SigningKey::decode(&enc_dsa_key);
+
+        return Some(SecretKey {
+            sodium_key: sodium_key,
+            ml_dsa_key: ml_key,
+        });
+    }
 }
 
 pub struct SignatureKeyPair {
