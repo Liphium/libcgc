@@ -1,5 +1,6 @@
 [package]
 name = "libcgc"
+description = "Liphium's encryption library to make encryption easy and reliable."
 version = "0.1.0"
 edition = "2024"
 homepage = "https://liphium.dev/libcgc"
