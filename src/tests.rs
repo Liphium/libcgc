@@ -28,6 +28,22 @@ fn test_signature_encoding() {
     );
 }
 
+// Test signature signing and verifiying
+#[test]
+fn test_signature_signing() {
+    use crate::signature::{self, SignatureKeyPair};
+
+    let mut pair = SignatureKeyPair::generate();
+
+    let message = b"some signature".as_slice();
+    let signed = signature::sign(&mut pair.secret_key, message.to_vec()).expect("Signing failed");
+
+    assert!(
+        signature::verify(&mut pair.public_key, message.to_vec(), signed)
+            .expect("Verification failed")
+    );
+}
+
 // Test asymmetric public and secret key encoding and decoding
 #[test]
 fn test_asymmetric_encoding() {

@@ -1,4 +1,7 @@
-use ml_dsa::{EncodedSigningKey, EncodedVerifyingKey, KeyGen, MlDsa65, SigningKey, VerifyingKey};
+use ml_dsa::{
+    EncodedSigningKey, EncodedVerifyingKey, KeyGen, MlDsa65, Signature, SigningKey, VerifyingKey,
+    signature::{SignerMut, Verifier},
+};
 use rand::rngs::OsRng;
 use sodoken::{SizedLockedArray, sign};
 
@@ -94,20 +97,54 @@ impl SignatureKeyPair {
         };
 
         // Generate a new signature key pair for libsodium
-        let mut pk = [0; sodoken::sign::PUBLICKEYBYTES];
-        let mut sk = sodoken::SizedLockedArray::new().unwrap();
-        sign::keypair(&mut pk, &mut sk.lock()).unwrap();
+        let mut sodium_pub = [0; sodoken::sign::PUBLICKEYBYTES];
+        let mut sodium_priv = sodoken::SizedLockedArray::new().unwrap();
+        sign::keypair(&mut sodium_pub, &mut sodium_priv.lock()).unwrap();
 
         // Return the complete key pair
         return SignatureKeyPair {
             public_key: PublicKey {
-                sodium_key: [0; sign::PUBLICKEYBYTES],
+                sodium_key: sodium_pub,
                 ml_dsa_key: verify_key,
             },
             secret_key: SecretKey {
-                sodium_key: sk,
+                sodium_key: sodium_priv,
                 ml_dsa_key: sign_key,
             },
         };
     }
+}
+
+// Sign a message using the secret key.
+pub fn sign(key: &mut SecretKey, message: Vec<u8>) -> Option<Vec<u8>> {
+    // Create a new ml_dsa signature
+    let mut ml_dsa_sig = key.ml_dsa_key.sign(&message).encode().to_vec();
+
+    // Also sign with sodium
+    let mut signature = [0; sign::SIGNATUREBYTES];
+    sign::sign_detached(&mut signature, &message.as_slice(), &key.sodium_key.lock()).ok()?;
+
+    // Add both signatures together
+    ml_dsa_sig.extend(signature);
+    return Some(ml_dsa_sig);
+}
+
+// Verify a message using the public key.
+pub fn verify(key: &PublicKey, message: Vec<u8>, signature: Vec<u8>) -> Option<bool> {
+    // Split the signature
+    if signature.len() <= sign::SIGNATUREBYTES {
+        return None;
+    }
+    let (ml_dsa_sig, sodium_sig) = signature.split_at(signature.len() - sign::SIGNATUREBYTES);
+
+    // Verify the ml_dsa signature
+    let ml_dsa_sig: Signature<MlDsa65> = Signature::decode(ml_dsa_sig.try_into().ok()?)?;
+    key.ml_dsa_key.verify(&message, &ml_dsa_sig).ok()?;
+
+    // Verify the libsodium signature
+    if !sign::verify_detached(&sodium_sig.try_into().ok()?, &message, &key.sodium_key) {
+        return Some(false);
+    }
+
+    return Some(true);
 }
