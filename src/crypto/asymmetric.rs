@@ -18,7 +18,7 @@ impl SecretKey {
     }
 
     // Encode a secret key to bytes.
-    pub fn encode(&mut self) -> Vec<u8> {
+    pub fn encode(&self) -> Vec<u8> {
         self.key.as_bytes().to_vec()
     }
 }
@@ -38,7 +38,7 @@ impl PublicKey {
     }
 
     // Encode a public key to bytes.
-    pub fn encode(&mut self) -> Vec<u8> {
+    pub fn encode(&self) -> Vec<u8> {
         self.key.as_bytes().to_vec()
     }
 }
@@ -62,7 +62,7 @@ impl AsymmetricKeyPair {
 }
 
 // Encrypt using the reciever's public key. Even the sender won't be able to decrypt this.
-pub fn encrypt(key: &PublicKey, message: Vec<u8>) -> Option<Vec<u8>> {
+pub fn encrypt(key: &PublicKey, message: &Vec<u8>) -> Option<Vec<u8>> {
     // Generate a new shared secret
     let rng = &mut rand::rngs::OsRng;
     let (ciphertext, shared_secret) = key.key.encapsulate(rng).ok()?;
@@ -76,7 +76,7 @@ pub fn encrypt(key: &PublicKey, message: Vec<u8>) -> Option<Vec<u8>> {
 }
 
 // Decrypt using your key pair.
-pub fn decrypt(priv_key: &SecretKey, ciphertext: Vec<u8>) -> Option<Vec<u8>> {
+pub fn decrypt(priv_key: &SecretKey, ciphertext: &Vec<u8>) -> Option<Vec<u8>> {
     // Make sure the ciphertext has the proper length
     if ciphertext.len() <= x_wing::CIPHERTEXT_SIZE {
         return None;
@@ -91,5 +91,5 @@ pub fn decrypt(priv_key: &SecretKey, ciphertext: Vec<u8>) -> Option<Vec<u8>> {
     let shared_secret = priv_key.key.decapsulate(&x_ciph).ok()?;
 
     // Decrypt using symmetric
-    return Some(symmetric::decrypt(&shared_secret, encrypted_msg.to_vec())?);
+    return Some(symmetric::decrypt(&shared_secret, &encrypted_msg.to_vec())?);
 }

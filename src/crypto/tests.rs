@@ -1,29 +1,29 @@
 // Test signature public and secret key encoding and decoding
 #[test]
 fn test_signature_encoding() {
-    use super::signature::{PublicKey, SecretKey, SignatureKeyPair};
+    use super::signature::{SignatureKeyPair, SigningKey, VerifyingKey};
 
     let mut pair = SignatureKeyPair::generate();
 
-    let encoded_pub = pair.public_key.encode();
-    let decoded_pub = PublicKey::decode(encoded_pub).unwrap();
+    let encoded_pub = pair.verify_key.encode();
+    let decoded_pub = VerifyingKey::decode(encoded_pub).unwrap();
     assert_eq!(
-        pair.public_key.sodium_key.as_slice(),
+        pair.verify_key.sodium_key.as_slice(),
         decoded_pub.sodium_key.as_slice()
     );
     assert_eq!(
-        pair.public_key.ml_dsa_key.encode().as_slice(),
+        pair.verify_key.ml_dsa_key.encode().as_slice(),
         decoded_pub.ml_dsa_key.encode().as_slice(),
     );
 
-    let encoded_priv = pair.secret_key.encode();
-    let mut decoded_priv: SecretKey = SecretKey::decode(encoded_priv).unwrap();
+    let encoded_priv = pair.signature_key.encode();
+    let mut decoded_priv: SigningKey = SigningKey::decode(encoded_priv).unwrap();
     assert_eq!(
-        pair.secret_key.ml_dsa_key.encode().as_slice(),
+        pair.signature_key.ml_dsa_key.encode().as_slice(),
         decoded_priv.ml_dsa_key.encode().as_slice()
     );
     assert_eq!(
-        pair.secret_key.sodium_key.lock().as_slice(),
+        pair.signature_key.sodium_key.lock().as_slice(),
         decoded_priv.sodium_key.lock().as_slice(),
     );
 }
@@ -36,12 +36,24 @@ fn test_signature_signing() {
     let mut pair = SignatureKeyPair::generate();
 
     let message = b"some signature".as_slice();
-    let signed = signature::sign(&mut pair.secret_key, message.to_vec()).expect("Signing failed");
+    let signed =
+        signature::sign(&mut pair.signature_key, &message.to_vec()).expect("Signing failed");
 
     assert!(
-        signature::verify(&mut pair.public_key, message.to_vec(), signed)
+        signature::verify(&mut pair.verify_key, &message.to_vec(), &signed)
             .expect("Verification failed")
     );
+    assert!(signed.len() == signature::SIGNATURE_LEN);
+
+    let message = b"some longer signature".as_slice();
+    let signed =
+        signature::sign(&mut pair.signature_key, &message.to_vec()).expect("Signing failed");
+
+    assert!(
+        signature::verify(&mut pair.verify_key, &message.to_vec(), &signed)
+            .expect("Verification failed")
+    );
+    assert!(signed.len() == signature::SIGNATURE_LEN);
 }
 
 // Test asymmetric public and secret key encoding and decoding
@@ -68,17 +80,16 @@ fn test_asymmetric_encryption() {
     // Test regular encryption, decryption and key generation
     let pair: AsymmetricKeyPair = AsymmetricKeyPair::generate();
     let message = b"Hello symmetric encryption!".to_vec();
-    let encrypted =
-        asymmetric::encrypt(&pair.public_key, message.clone()).expect("Encryption failed");
-    let decrypted = asymmetric::decrypt(&pair.secret_key, encrypted).expect("Decryption failed");
+    let encrypted = asymmetric::encrypt(&pair.public_key, &message).expect("Encryption failed");
+    let decrypted = asymmetric::decrypt(&pair.secret_key, &encrypted).expect("Decryption failed");
     assert_eq!(message, decrypted);
 
     // Make sure the decryption fails with invalid input
-    assert!(asymmetric::decrypt(&pair.secret_key, vec![0u8; 10]).is_none());
-    assert!(asymmetric::decrypt(&pair.secret_key, vec![0u8; 1000]).is_none());
-    assert!(asymmetric::decrypt(&pair.secret_key, vec![0u8; 2000]).is_none());
-    assert!(asymmetric::decrypt(&pair.secret_key, vec![0u8; 3000]).is_none());
-    assert!(asymmetric::decrypt(&pair.secret_key, vec![0u8; 4000]).is_none());
+    assert!(asymmetric::decrypt(&pair.secret_key, &vec![0u8; 10]).is_none());
+    assert!(asymmetric::decrypt(&pair.secret_key, &vec![0u8; 1000]).is_none());
+    assert!(asymmetric::decrypt(&pair.secret_key, &vec![0u8; 2000]).is_none());
+    assert!(asymmetric::decrypt(&pair.secret_key, &vec![0u8; 3000]).is_none());
+    assert!(asymmetric::decrypt(&pair.secret_key, &vec![0u8; 4000]).is_none());
 }
 
 // Test symmetric key encoding and decoding
@@ -101,14 +112,14 @@ fn test_symmetric_encryption() {
     // Test regular encryption, decryption and key generation
     let mut key = SymmetricKey::generate();
     let message = b"Hello symmetric encryption!".to_vec();
-    let encrypted = key.encrypt(message.clone()).expect("Encryption failed");
-    let decrypted = key.decrypt(encrypted).expect("Decryption failed");
+    let encrypted = key.encrypt(&message).expect("Encryption failed");
+    let decrypted = key.decrypt(&encrypted).expect("Decryption failed");
     assert_eq!(message, decrypted);
 
     // Make sure the decryption fails with invalid input
-    assert!(key.decrypt(vec![0u8; 10]).is_none());
-    assert!(key.decrypt(vec![0u8; 1000]).is_none());
-    assert!(key.decrypt(vec![0u8; 2000]).is_none());
-    assert!(key.decrypt(vec![0u8; 3000]).is_none());
-    assert!(key.decrypt(vec![0u8; 4000]).is_none());
+    assert!(key.decrypt(&vec![0u8; 10]).is_none());
+    assert!(key.decrypt(&vec![0u8; 1000]).is_none());
+    assert!(key.decrypt(&vec![0u8; 2000]).is_none());
+    assert!(key.decrypt(&vec![0u8; 3000]).is_none());
+    assert!(key.decrypt(&vec![0u8; 4000]).is_none());
 }

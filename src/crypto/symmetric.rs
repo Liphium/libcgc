@@ -26,18 +26,18 @@ impl SymmetricKey {
     }
 
     // Encrypt a message using the symmetric key.
-    pub fn encrypt(&mut self, message: Vec<u8>) -> Option<Vec<u8>> {
+    pub fn encrypt(&mut self, message: &Vec<u8>) -> Option<Vec<u8>> {
         return encrypt(&self.key.lock(), message);
     }
 
     // Decrypt a message using the symmetric key.
-    pub fn decrypt(&mut self, message: Vec<u8>) -> Option<Vec<u8>> {
+    pub fn decrypt(&mut self, message: &Vec<u8>) -> Option<Vec<u8>> {
         return decrypt(&self.key.lock(), message);
     }
 }
 
 // Encrypt a message using the symmetric key.
-pub fn encrypt(key: &[u8; secretbox::XSALSA_KEYBYTES], message: Vec<u8>) -> Option<Vec<u8>> {
+pub fn encrypt(key: &[u8; secretbox::XSALSA_KEYBYTES], message: &Vec<u8>) -> Option<Vec<u8>> {
     // Generate a random nonce for the message
     let mut nonce = [0; secretbox::XSALSA_NONCEBYTES];
     match random::randombytes_buf(&mut nonce) {
@@ -58,9 +58,9 @@ pub fn encrypt(key: &[u8; secretbox::XSALSA_KEYBYTES], message: Vec<u8>) -> Opti
 }
 
 // Decrypt a message using the symmetric key.
-pub fn decrypt(key: &[u8; secretbox::XSALSA_KEYBYTES], ciphertext: Vec<u8>) -> Option<Vec<u8>> {
+pub fn decrypt(key: &[u8; secretbox::XSALSA_KEYBYTES], ciphertext: &Vec<u8>) -> Option<Vec<u8>> {
     // Make sure the ciphertext is long enough
-    if ciphertext.len() <= secretbox::XSALSA_NONCEBYTES {
+    if ciphertext.len() <= secretbox::XSALSA_NONCEBYTES + secretbox::XSALSA_MACBYTES {
         return None;
     }
 
