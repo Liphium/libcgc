@@ -506,6 +506,7 @@ dependencies = [
  "ml-dsa",
  "ml-kem 0.2.1",
  "rand",
+ "sha3",
  "sodoken",
  "x-wing",
 ]
