@@ -2,6 +2,8 @@
 
 Liphium's encryption primitives for containerizing information sent to the server. CGC stands for (C)rypto(G)raphic (C)ontainers. This library provides you with two types of containers: ``auth_asymmetric`` and ``auth_symmetric``. Both contain a signature (hence the ``auth`` prefix) to make sure you're actually decrypting the message from the sender you think it is. You can also attach a salt to prevent replay attacks. In Liphium (our chat app), for example, we attach message timestamps as salts to prevent the message from being sent again pretending to be someone else as time modifications could significantly change the context of the sent message.
 
+Documentation and how to use the library will follow at a later date. We will first verify the usefulness of libcgc in the real world ourselves.
+
 ## Security
 
 LibCGC has never been audited, but it's using industry-standard libraries for most of its cryptography implementations. However, some cryptographic primitives libcgc uses have not been audited yet. Namely, RustCrypto's [x-wing](https://github.com/RustCrypto/KEMs/tree/master/x-wing) and RustCrypto's [ml-dsa](https://github.com/RustCrypto/signatures/tree/master/ml-dsa). 
