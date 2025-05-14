@@ -1,7 +1,7 @@
 use ml_kem::kem::{Decapsulate, Encapsulate};
 use x_wing::{DecapsulationKey, EncapsulationKey};
 
-use crate::symmetric;
+use super::symmetric;
 
 // The secret key for asymmetric encryption. Only keep to yourself.
 pub struct SecretKey {

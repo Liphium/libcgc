@@ -135,17 +135,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
-name = "crypto"
-version = "0.1.0"
-dependencies = [
- "ml-dsa",
- "ml-kem 0.2.1",
- "rand",
- "sodoken",
- "x-wing",
-]
-
-[[package]]
 name = "crypto-common"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -509,6 +498,17 @@ name = "libc"
 version = "0.2.172"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d750af042f7ef4f724306de029d18836c26c1765a54a6a3f094cbd23a7267ffa"
+
+[[package]]
+name = "libcgc"
+version = "0.1.0"
+dependencies = [
+ "ml-dsa",
+ "ml-kem 0.2.1",
+ "rand",
+ "sodoken",
+ "x-wing",
+]
 
 [[package]]
 name = "libflate"

@@ -1,7 +1,7 @@
 // Test signature public and secret key encoding and decoding
 #[test]
 fn test_signature_encoding() {
-    use crate::signature::{PublicKey, SecretKey, SignatureKeyPair};
+    use super::signature::{PublicKey, SecretKey, SignatureKeyPair};
 
     let mut pair = SignatureKeyPair::generate();
 
@@ -31,7 +31,7 @@ fn test_signature_encoding() {
 // Test signature signing and verifiying
 #[test]
 fn test_signature_signing() {
-    use crate::signature::{self, SignatureKeyPair};
+    use super::signature::{self, SignatureKeyPair};
 
     let mut pair = SignatureKeyPair::generate();
 
@@ -47,7 +47,7 @@ fn test_signature_signing() {
 // Test asymmetric public and secret key encoding and decoding
 #[test]
 fn test_asymmetric_encoding() {
-    use crate::asymmetric::{AsymmetricKeyPair, PublicKey, SecretKey};
+    use super::asymmetric::{AsymmetricKeyPair, PublicKey, SecretKey};
 
     let mut pair = AsymmetricKeyPair::generate();
 
@@ -63,7 +63,7 @@ fn test_asymmetric_encoding() {
 // Test encryption and decryption using asymmetric (uses x_wing)
 #[test]
 fn test_asymmetric_encryption() {
-    use crate::asymmetric::{self, AsymmetricKeyPair};
+    use super::asymmetric::{self, AsymmetricKeyPair};
 
     // Test regular encryption, decryption and key generation
     let pair: AsymmetricKeyPair = AsymmetricKeyPair::generate();
@@ -84,7 +84,7 @@ fn test_asymmetric_encryption() {
 // Test symmetric key encoding and decoding
 #[test]
 fn test_symmetric_key_encoding() {
-    use crate::symmetric::SymmetricKey;
+    use super::symmetric::SymmetricKey;
 
     let mut key = SymmetricKey::generate();
     let encoded = key.encode();
@@ -96,7 +96,7 @@ fn test_symmetric_key_encoding() {
 // Test symmetric encryption and decryption on a sample message
 #[test]
 fn test_symmetric_encryption() {
-    use crate::symmetric::SymmetricKey;
+    use super::symmetric::SymmetricKey;
 
     // Test regular encryption, decryption and key generation
     let mut key = SymmetricKey::generate();
