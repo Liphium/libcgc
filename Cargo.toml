@@ -2,6 +2,10 @@
 name = "libcgc"
 version = "0.1.0"
 edition = "2024"
+homepage = "https://liphium.dev/libcgc"
+repository = "https://github.com/Liphium/libcgc"
+license = "Unlicense"
+license-file = "LICENSE"
 
 [dependencies]
 ml-dsa = "0.0.4"
