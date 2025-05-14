@@ -7,6 +7,36 @@ pub struct PublicKey {
     pub ml_dsa_key: ml_dsa::VerifyingKey<MlDsa65>,
 }
 
+impl PublicKey {
+    // Encode a public key as a vector of bytes.
+    pub fn encode(&self) -> Vec<u8> {
+        let mut ml_key = self.ml_dsa_key.encode().to_vec();
+        ml_key.extend(self.sodium_key);
+        return ml_key;
+    }
+
+    // Decode a public key from a vector of bytes.
+    pub fn decode(encoded: Vec<u8>) -> Option<PublicKey> {
+        // Extract the two different keys
+        if encoded.len() <= sign::PUBLICKEYBYTES {
+            return None;
+        }
+        let (enc_dsa_key, enc_sodium_key) = encoded.split_at(encoded.len() - sign::PUBLICKEYBYTES);
+
+        // Parse the libsodium key
+        let sodium_key: [u8; sign::PUBLICKEYBYTES] = enc_sodium_key.try_into().ok()?;
+
+        // Parse the ml_dsa key
+        let enc_dsa_key: EncodedVerifyingKey<MlDsa65> = enc_dsa_key.try_into().ok()?;
+        let ml_key = VerifyingKey::decode(&enc_dsa_key);
+
+        return Some(PublicKey {
+            sodium_key: sodium_key,
+            ml_dsa_key: ml_key,
+        });
+    }
+}
+
 pub struct SecretKey {
     pub sodium_key: SizedLockedArray<{ sign::SECRETKEYBYTES }>,
     pub ml_dsa_key: ml_dsa::SigningKey<MlDsa65>,

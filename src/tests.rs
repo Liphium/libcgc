@@ -1,3 +1,33 @@
+// Test signature public and secret key encoding and decoding
+#[test]
+fn test_signature_encoding() {
+    use crate::signature::{PublicKey, SecretKey, SignatureKeyPair};
+
+    let mut pair = SignatureKeyPair::generate();
+
+    let encoded_pub = pair.public_key.encode();
+    let decoded_pub = PublicKey::decode(encoded_pub).unwrap();
+    assert_eq!(
+        pair.public_key.sodium_key.as_slice(),
+        decoded_pub.sodium_key.as_slice()
+    );
+    assert_eq!(
+        pair.public_key.ml_dsa_key.encode().as_slice(),
+        decoded_pub.ml_dsa_key.encode().as_slice(),
+    );
+
+    let encoded_priv = pair.secret_key.encode();
+    let mut decoded_priv: SecretKey = SecretKey::decode(encoded_priv).unwrap();
+    assert_eq!(
+        pair.secret_key.ml_dsa_key.encode().as_slice(),
+        decoded_priv.ml_dsa_key.encode().as_slice()
+    );
+    assert_eq!(
+        pair.secret_key.sodium_key.lock().as_slice(),
+        decoded_priv.sodium_key.lock().as_slice(),
+    );
+}
+
 // Test asymmetric public and secret key encoding and decoding
 #[test]
 fn test_asymmetric_encoding() {
