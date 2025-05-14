@@ -4,6 +4,11 @@ Liphium's encryption primitives for containerizing information sent to the serve
 
 Documentation and how to use the library will follow at a later date. We will first verify the usefulness of libcgc in the real world ourselves.
 
+LibCGC is available [here](https://crates.io/crates/libcgc) on the crates.io repository. Add it to your project by using the following command:
+```
+cargo add libcgc
+```
+
 ## Security
 
 LibCGC has never been audited, but it's using industry-standard libraries for most of its cryptography implementations. However, some cryptographic primitives libcgc uses have not been audited yet. Namely, RustCrypto's [x-wing](https://github.com/RustCrypto/KEMs/tree/master/x-wing) and RustCrypto's [ml-dsa](https://github.com/RustCrypto/signatures/tree/master/ml-dsa). 
