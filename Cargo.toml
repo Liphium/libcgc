@@ -1,7 +1,7 @@
 [package]
 name = "libcgc"
 description = "Liphium's encryption library to make encryption easy and reliable."
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 homepage = "https://liphium.dev/libcgc"
 repository = "https://github.com/Liphium/libcgc"
