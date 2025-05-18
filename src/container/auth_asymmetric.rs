@@ -16,7 +16,12 @@ pub fn pack(
     if let Some(salt) = salt {
         encrypted.extend(signature::sign(
             signing_key,
-            &message.iter().chain(salt).cloned().collect(),
+            &message
+                .iter()
+                .chain(public_key.encode().iter())
+                .chain(salt)
+                .cloned()
+                .collect(),
         )?);
     } else {
         encrypted.extend(signature::sign(signing_key, message)?);
@@ -27,6 +32,7 @@ pub fn pack(
 /// Unpack a new signed container using asymmetric encryption. Decrypts asymmetrically and verifies the signature.
 /// Returns ``None`` in case of failing to verify the signature.
 pub fn unpack(
+    public_key: &PublicKey,
     secret_key: &SecretKey,
     verifying_key: &VerifyingKey,
     ciphertext: &Vec<u8>,
@@ -45,7 +51,12 @@ pub fn unpack(
     if let Some(salt) = salt {
         if !signature::verify(
             verifying_key,
-            &decrypted.iter().chain(salt.iter()).cloned().collect(),
+            &decrypted
+                .iter()
+                .chain(public_key.encode().iter())
+                .chain(salt.iter())
+                .cloned()
+                .collect(),
             &signed.to_vec(),
         )? {
             return None;

@@ -20,6 +20,7 @@ fn test_auth_asymmetric() {
     )
     .expect("Packing failed");
     let unpacked = auth_asymmetric::unpack(
+        &receiver_e_kp.public_key,
         &receiver_e_kp.secret_key,
         &sender_s_kp.verify_key,
         &packed,
@@ -33,6 +34,7 @@ fn test_auth_asymmetric() {
     copy.extend(b"b");
     assert!(
         auth_asymmetric::unpack(
+            &receiver_e_kp.public_key,
             &receiver_e_kp.secret_key,
             &sender_s_kp.verify_key,
             &copy,
@@ -43,6 +45,7 @@ fn test_auth_asymmetric() {
     copy.extend(b"adhuasuduaiui");
     assert!(
         auth_asymmetric::unpack(
+            &receiver_e_kp.public_key,
             &receiver_e_kp.secret_key,
             &sender_s_kp.verify_key,
             &copy,
@@ -54,6 +57,7 @@ fn test_auth_asymmetric() {
     // Make sure verifying with an invalid key doesn't work
     assert!(
         auth_asymmetric::unpack(
+            &receiver_e_kp.public_key,
             &receiver_e_kp.secret_key,
             &receiver_s_kp.verify_key,
             &packed,
@@ -74,6 +78,7 @@ fn test_auth_asymmetric() {
 
     // Unpacking with correct salt should work
     let unpacked_with_salt = auth_asymmetric::unpack(
+        &receiver_e_kp.public_key,
         &receiver_e_kp.secret_key,
         &sender_s_kp.verify_key,
         &packed_with_salt,
@@ -86,6 +91,7 @@ fn test_auth_asymmetric() {
     let wrong_salt = b"wrong_salt_value".to_vec();
     assert!(
         auth_asymmetric::unpack(
+            &receiver_e_kp.public_key,
             &receiver_e_kp.secret_key,
             &sender_s_kp.verify_key,
             &packed_with_salt,
