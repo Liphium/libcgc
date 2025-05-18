@@ -30,6 +30,9 @@ pub fn pack(
 }
 
 /// Unpack a new signed container using asymmetric encryption. Decrypts asymmetrically and verifies the signature.
+///
+/// ``public_key`` is your own public key.
+///
 /// Returns ``None`` in case of failing to verify the signature.
 pub fn unpack(
     public_key: &PublicKey,
