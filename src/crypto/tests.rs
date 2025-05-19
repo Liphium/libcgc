@@ -61,7 +61,7 @@ fn test_signature_signing() {
 fn test_asymmetric_encoding() {
     use super::asymmetric::{AsymmetricKeyPair, PublicKey, SecretKey};
 
-    let mut pair = AsymmetricKeyPair::generate();
+    let pair = AsymmetricKeyPair::generate();
 
     let encoded_pub = pair.public_key.encode();
     let decoded_pub = PublicKey::decode(encoded_pub).unwrap();
@@ -122,4 +122,43 @@ fn test_symmetric_encryption() {
     assert!(key.decrypt(&vec![0u8; 2000]).is_none());
     assert!(key.decrypt(&vec![0u8; 3000]).is_none());
     assert!(key.decrypt(&vec![0u8; 4000]).is_none());
+}
+
+// Test symmetric stream cipher
+#[test]
+fn test_symmetric_stream_encryption() {
+    use super::stream_symmetric::{
+        HEADER_LENGTH, decrypt, encrypt, new_decryption_cipher, new_encryption_cipher,
+    };
+    use super::symmetric::SymmetricKey;
+
+    let mut key = SymmetricKey::generate();
+    let (mut enc_cipher, header) =
+        new_encryption_cipher(&mut key).expect("Failed to init encryption cipher");
+    assert_eq!(header.len(), HEADER_LENGTH);
+
+    let mut dec_cipher =
+        new_decryption_cipher(&mut key, &header).expect("Failed to init decryption cipher");
+
+    let chunks = vec![
+        b"Hello ".to_vec(),
+        b"stream ".to_vec(),
+        b"encryption!".to_vec(),
+    ];
+    let mut accumulated = Vec::new();
+
+    for (i, chunk) in chunks.iter().enumerate() {
+        let last = i + 1 == chunks.len();
+        let ct = encrypt(&mut enc_cipher, chunk, last).expect("Encryption failed");
+        let (pt, is_last) = decrypt(&mut dec_cipher, &ct).expect("Decryption failed");
+        assert_eq!(pt, *chunk);
+        assert_eq!(is_last, last);
+        accumulated.extend(pt);
+    }
+
+    assert_eq!(accumulated, b"Hello stream encryption!".to_vec());
+
+    // invalid ciphertext should return None
+    assert!(decrypt(&mut dec_cipher, &vec![0u8; 2]).is_none());
+    assert!(decrypt(&mut dec_cipher, &vec![0u8; HEADER_LENGTH]).is_none());
 }
