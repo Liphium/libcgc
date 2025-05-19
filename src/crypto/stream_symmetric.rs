@@ -7,6 +7,7 @@ pub struct StreamCipher {
 }
 
 pub const HEADER_LENGTH: usize = secretstream::HEADERBYTES;
+pub const EXTRA_LENGTH: usize = secretstream::ABYTES;
 
 /// Create a new stream cipher for stream symmetric encryption.
 ///
