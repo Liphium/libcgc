@@ -10,6 +10,9 @@ use crate::crypto::{
     symmetric::SymmetricKey,
 };
 
+/// Chunk size of the encrypted chunks (longer by stream_symmetric::EXTRA_LENGTH) in encrypted form.
+const CHUNK_SIZE: usize = 1024 * 1024;
+
 pub async fn pack(
     path: String,
     result_path: String,
@@ -25,7 +28,7 @@ pub async fn pack(
 
     // Encrypt the file in 1 MB chunks
     let mut hasher = Hasher::new();
-    let mut buffer = vec![0; 1024 * 1024];
+    let mut buffer = vec![0; CHUNK_SIZE];
     loop {
         let n = file.read(&mut buffer).await.ok()?;
         if n == 0 {
@@ -63,30 +66,49 @@ pub async fn unpack(
 
     // Read the file in chunks
     let mut hasher = Hasher::new();
-    let mut buffer = vec![0; 1024 * 1024 + stream_symmetric::EXTRA_LENGTH];
+    let mut read_sig: Option<[u8; signature::SIGNATURE_LEN]> = None;
+    let mut buffer = vec![0; CHUNK_SIZE + stream_symmetric::EXTRA_LENGTH];
     loop {
         let n = file.read(&mut buffer).await.ok()?;
         if n == 0 {
             break;
         }
-        let (chunk, _) = buffer.split_at(n);
+
+        // Make sure to split the file correctly (make sure signature isn't in there)
+        let chunk = if n != CHUNK_SIZE + stream_symmetric::EXTRA_LENGTH {
+            if n <= signature::SIGNATURE_LEN {
+                println!("Invalid chunk length");
+                return None;
+            }
+
+            // Cut off the signature and chunk. Save the signature for later.
+            let (chunk, sig) = buffer.split_at(n - signature::SIGNATURE_LEN);
+
+            read_sig = Some((sig[..signature::SIGNATURE_LEN]).try_into().ok()?);
+            Some(chunk.to_vec())
+        } else {
+            Some(buffer.clone())
+        }?;
 
         // Decrypt the file and write decrypted content to the result file
-        let (decrypted, _) = stream_symmetric::decrypt(&mut cipher, &chunk.to_vec())?;
+        let (decrypted, _) = stream_symmetric::decrypt(&mut cipher, &chunk)?;
         hasher.update(&decrypted);
         result_file.write(&decrypted).await.ok()?;
     }
 
     // Verify the signature
-    let mut signature = [0u8; signature::SIGNATURE_LEN];
-    file.read(&mut signature).await.ok();
+    if read_sig.is_none() {
+        let mut signature = [0u8; signature::SIGNATURE_LEN];
+        file.read(&mut signature).await.ok();
+        read_sig = Some(signature);
+    }
     if signature::verify(
         verifying_key,
         &hasher.finalize().as_bytes().to_vec(),
-        &signature.to_vec(),
+        &read_sig.unwrap().to_vec(),
     )? {
-        None
-    } else {
         Some(())
+    } else {
+        None
     }
 }

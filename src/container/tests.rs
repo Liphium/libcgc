@@ -158,3 +158,81 @@ fn test_auth_symmetric() {
         .is_none()
     );
 }
+
+// Test the symmetric file encryption container
+#[tokio::test]
+async fn test_file_symmetric() {
+    use super::file_symmetric;
+    use crate::crypto::signature::SignatureKeyPair;
+    use crate::crypto::symmetric::SymmetricKey;
+    use std::env::temp_dir;
+    use tokio::fs::{File, remove_file};
+    use tokio::io::AsyncWriteExt;
+
+    // prepare file paths
+    let dir = temp_dir();
+    let input = dir.join("test_input.txt");
+    let packed = dir.join("test_input.txt.enc");
+    let output = dir.join("test_output.txt");
+
+    // write original data
+    let data = b"Hello file symmetric container!";
+    let mut f = File::create(&input).await.unwrap();
+    f.write_all(data).await.unwrap();
+
+    // generate keys
+    let mut key = SymmetricKey::generate();
+    let mut skp = SignatureKeyPair::generate();
+
+    // pack
+    assert!(
+        file_symmetric::pack(
+            input.to_string_lossy().into_owned(),
+            packed.to_string_lossy().into_owned(),
+            &mut key,
+            &mut skp.signature_key,
+        )
+        .await
+        .is_some()
+    );
+
+    // unpack
+    assert!(
+        file_symmetric::unpack(
+            packed.to_string_lossy().into_owned(),
+            output.to_string_lossy().into_owned(),
+            &mut key,
+            &skp.verify_key,
+        )
+        .await
+        .is_some()
+    );
+
+    // verify output matches input
+    let content = tokio::fs::read(&output).await.unwrap();
+    assert_eq!(content.as_slice(), data);
+
+    // tamper with encrypted file
+    let mut f_enc = tokio::fs::OpenOptions::new()
+        .write(true)
+        .open(&packed)
+        .await
+        .unwrap();
+    f_enc.write_all(b"tamper").await.unwrap();
+
+    assert!(
+        file_symmetric::unpack(
+            packed.to_string_lossy().into_owned(),
+            output.to_string_lossy().into_owned(),
+            &mut key,
+            &skp.verify_key,
+        )
+        .await
+        .is_none()
+    );
+
+    // cleanup
+    let _ = remove_file(input).await;
+    let _ = remove_file(packed).await;
+    let _ = remove_file(output).await;
+}

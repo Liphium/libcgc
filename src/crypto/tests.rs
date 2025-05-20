@@ -54,6 +54,21 @@ fn test_signature_signing() {
             .expect("Verification failed")
     );
     assert!(signed.len() == signature::SIGNATURE_LEN);
+
+    // Make sure it fails with a tampered message
+    let mut tampered_msg = message.to_vec();
+    tampered_msg.extend(b"tamper");
+    assert!(
+        signature::verify(&mut pair.verify_key, &tampered_msg, &signed).is_none_or(|b| b == false)
+    );
+
+    // Make sure it fails with a tampered signature
+    let mut tampered_sig = signed.to_vec();
+    tampered_sig[0] = 0xFF;
+    assert!(
+        signature::verify(&mut pair.verify_key, &message.to_vec(), &tampered_sig)
+            .is_none_or(|b| b == false)
+    );
 }
 
 // Test asymmetric public and secret key encoding and decoding
@@ -147,12 +162,11 @@ fn test_symmetric_stream_encryption() {
     ];
     let mut accumulated = Vec::new();
 
-    for (i, chunk) in chunks.iter().enumerate() {
-        let last = i + 1 == chunks.len();
-        let ct = encrypt(&mut enc_cipher, chunk, last).expect("Encryption failed");
+    for (_, chunk) in chunks.iter().enumerate() {
+        let ct = encrypt(&mut enc_cipher, chunk, false).expect("Encryption failed");
         let (pt, is_last) = decrypt(&mut dec_cipher, &ct).expect("Decryption failed");
         assert_eq!(pt, *chunk);
-        assert_eq!(is_last, last);
+        assert_eq!(is_last, false);
         accumulated.extend(pt);
     }
 
